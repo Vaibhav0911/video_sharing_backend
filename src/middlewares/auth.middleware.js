@@ -8,14 +8,20 @@ const jwtverify = AsyncHandler(async (req, res, next) => {
     req.cookies?.accessToken ||
     req.header["Authorization"]?.replace("Bearer ", "");
 
+  let decoded;  
+
   try {
-    const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-    const user = await Users.findById(decoded.id);
-    req.user = user;
-    next();
+    decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
   } catch (error) {
-    throw new ApiError("400", "Invalid accessToken");
+    if (error.name === "TokenExpiredError") {
+      throw new ApiError(401, "AccessToken expired");
+    }
+    throw new ApiError("400", "Invalid AccessToken");
   }
+
+  const user = await Users.findById(decoded.id);
+  req.user = user;
+  next();
 });
 
 export { jwtverify };

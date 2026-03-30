@@ -4,7 +4,10 @@ import { jwtverify } from "../middlewares/auth.middleware.js";
 import { 
   userRegister,
   userLogin,
-  userLogout 
+  userLogout,
+  refreshAccessToken,
+  updateProfileImage,
+  updateCoverImage 
 } from "../controllers/user.controller.js";
 
 const router = Router();
@@ -22,9 +25,26 @@ router.route("/login").post(
   userLogin
 )
 
+router.route("/refresh-access-token").post(
+  refreshAccessToken
+)
+
+// secure routes
 router.route("/logout").post(
   jwtverify,
   userLogout
+)
+
+router.route("/update-profile-image").post(
+  jwtverify,
+  Upload.single("profileimage"),
+  updateProfileImage
+)
+
+router.route("/update-cover-image").post(
+  jwtverify,
+  Upload.single("coverimage"),
+  updateCoverImage
 )
 
 export default router;

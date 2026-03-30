@@ -53,7 +53,6 @@ userSchema.methods.isPasswordCorrect = async function (password) {
 };
 
 userSchema.methods.accessToken = function () {
-  try {
     return jwt.sign(
       {
         id: this._id,
@@ -63,13 +62,9 @@ userSchema.methods.accessToken = function () {
       process.env.ACCESS_TOKEN_SECRET,
       { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
     );
-  } catch (error) {
-    return error;
-  }
 };
 
 userSchema.methods.refreshToken = function () {
-  try {
     return jwt.sign(
       {
         id: this._id,
@@ -77,9 +72,6 @@ userSchema.methods.refreshToken = function () {
       process.env.REFRESH_TOKEN_SECRET,
       { expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
     );
-  } catch (error) {
-    return null;
-  }
 };
 
 export const Users = mongoose.model('Users', userSchema);
