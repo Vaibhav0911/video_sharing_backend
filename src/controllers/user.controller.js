@@ -5,12 +5,20 @@ import { cloudinary } from "../utils/uploadToCloudinary.js";
 import { Users } from "../models/users.model.js";
 import fs from "fs/promises";
 import jwt from "jsonwebtoken";
-import { subscribe } from "diagnostics_channel";
 
 const options = {
   httpOnly: true,
   secure: false,
 };
+
+const uploadImageOnCloudinary = (filePath) => {
+  return cloudinary.uploader.upload(filePath,
+      {
+        resource_type: "image", 
+        folder: "images",
+      }
+  );
+}
 
 const deleteImageFromLocal = async (filePath) => {
   try {
@@ -55,12 +63,12 @@ const userRegister = AsyncHandler(async (req, res) => {
   let coverimage;
 
   if (profileImagePath) {
-    profileimage = await cloudinary.uploader.upload(profileImagePath);
+    profileimage = await uploadImageOnCloudinary(profileImagePath);
     deleteImageFromLocal(profileImagePath);
   }
 
   if (coverImagePath) {
-    coverimage = await cloudinary.uploader.upload(coverImagePath);
+    coverimage = await uploadImageOnCloudinary(coverImagePath);
     deleteImageFromLocal(coverImagePath);
   }
 
@@ -183,13 +191,11 @@ const refreshAccessToken = AsyncHandler(async (req, res) => {
 
 const updateProfileImage = AsyncHandler(async (req, res) => {
   
-  const profileImageLocalPath = req.file.path;
+  const profileImageLocalPath = req.file?.path;
 
-  const profileImage = await cloudinary.uploader.upload(profileImageLocalPath);
+  const profileImage = await uploadImageOnCloudinary(profileImageLocalPath);
 
   deleteImageFromLocal(profileImageLocalPath);
-
-  if(!profileImage)    throw new ApiError(400, "Error uploading image to cloudinary"); 
 
   const user = await Users.findById(req.user._id);
 
@@ -217,11 +223,9 @@ const updateCoverImage = AsyncHandler(async (req, res) => {
 
   const coverImageLocalPath = req.file.path;
 
-  const coverImage = await cloudinary.uploader.upload(coverImageLocalPath);
+  const coverImage = await uploadImageOnCloudinary(coverImageLocalPath);
 
   deleteImageFromLocal(coverImageLocalPath);
-
-  if(!coverImage)    throw new ApiError(400, "Error uploading image to cloudinary");
 
   const user = await Users.findById(req.user._id);
 
@@ -357,6 +361,49 @@ const userWatchHistory = AsyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, "User watch history fetch successfully", user[0]))
 })
 
+const getUserVideos = AsyncHandler(async (req, res) => {
+
+  const { username} = req.params;
+
+  if(!username?.trim())           throw new ApiError(400, "Username is required!");
+
+  const userVideos = await Users.aggregate([
+    {   
+      $match: { username: username?.trim()?.toLowerCase() }
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "myVideos",
+        foreignField: "_id",
+        as: "myVideos",
+        pipeline: [
+          {
+            $project: {
+              videofile: 1,
+              thumbnail: 1,
+              title: 1,
+              duration: 1,
+              views: 1,
+              description: 1,
+              createdAt: 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      $project: {
+        myVideos: 1 
+      }
+    }
+  ])
+
+  if(!userVideos)                   throw new ApiError(400, "User not found!");
+
+  res.status(200).json(200, "Successfully fetched user videos", userVideos);
+})
+
 export {
   userRegister,
   userLogin,
@@ -366,4 +413,5 @@ export {
   updateCoverImage,
   getUserChannelProfile,
   userWatchHistory,
+  getUserVideos,
 };

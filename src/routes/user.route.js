@@ -9,7 +9,8 @@ import {
   updateProfileImage,
   updateCoverImage,
   getUserChannelProfile,
-  userWatchHistory, 
+  userWatchHistory,
+  getUserVideos 
 } from "../controllers/user.controller.js";
 
 const router = Router();
@@ -57,6 +58,11 @@ router.route("/channel-profile").get(
 router.route("/watch-history").get(
   jwtverify,
   userWatchHistory
+)
+
+router.route("/videos").get(
+  jwtverify,
+  getUserVideos
 )
 
 export default router;
