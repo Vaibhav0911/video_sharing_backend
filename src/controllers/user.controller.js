@@ -279,7 +279,7 @@ const getUserChannelProfile = AsyncHandler(async (req, res) => {
     },
     {
       $addFields: {
-        subscriberCount : { $size: "$subscriber"},
+        subscriberCount : { $size: "$subscribers"},
         subscribedChannelsCount: { $size: "$subscribedChannels"},
         isSubscribed: {
           $cond: {
@@ -405,6 +405,7 @@ const getUserVideos = AsyncHandler(async (req, res) => {
 
   res.status(200).json(new ApiResponse(200, "Successfully fetched user videos", userVideos));
 })
+
 
 export {
   userRegister,

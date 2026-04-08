@@ -10,7 +10,7 @@ import {
   updateCoverImage,
   getUserChannelProfile,
   userWatchHistory,
-  getUserVideos 
+  getUserVideos,
 } from "../controllers/user.controller.js";
 
 const router = Router();
