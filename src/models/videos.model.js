@@ -29,12 +29,6 @@ const videoSchema = new Schema(
       type: String,
       required: true,
     },
-    videoId: {
-      // Clean public ID
-      type: String,
-      unique: true,
-      index: true,
-    },
     slug: {
       // SEO slug
       type: String,
@@ -59,10 +53,8 @@ const videoSchema = new Schema(
   }
 );
 
-videoSchema.pre("save", async function () {
-  if (!this.videoId) this.videoId = `vid_${nanoid(8)}`;
-
-  if (this.isModified("title")) {
+async function slugMiddleware() {
+  if (this.isModified && this.isModified("title")) {
     const baseSlug = slugify(this.title, {
       lower: true,
       strict: true,
@@ -70,10 +62,40 @@ videoSchema.pre("save", async function () {
 
     const existing = await this.constructor.findOne({
       slug: baseSlug,
+      _id: { $ne: this._id },
     });
 
     this.slug = existing ? `${baseSlug}-${nanoid(4)}` : baseSlug;
+  } else if (this.getUpdate) {
+    const update = this.getUpdate();
+
+    const title = update.title || update.$set?.title;
+
+    if (title) {
+      const baseSlug = slugify(title, {
+        lower: true,
+        strict: true,
+      });
+
+      const existing = await this.model.findOne({
+        slug: baseSlug,
+        _id: { $ne: this.getQuery()._id },
+      });
+
+      const slug = existing ? `${baseSlug}-${nanoid(4)}` : baseSlug;
+
+      if (update.$set) {
+        update.$set.slug = slug;
+      } else {
+        update.slug = slug;
+      }
+
+      console.log(slug);
+    }
   }
-});
+}
+
+videoSchema.pre("save", slugMiddleware);
+videoSchema.pre("findOneAndUpdate", slugMiddleware);
 
 export const Videos = mongoose.model("Videos", videoSchema);

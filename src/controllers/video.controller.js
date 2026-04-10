@@ -35,8 +35,8 @@ const uploadVideo = AsyncHandler(async (req, res) => {
 
   // console.log(req.files);
 
-  if (!localVideoFilePath) throw new ApiError(400, "No videofile uploaded");
-  if (!localThumbnailPath) throw new ApiError(400, "No Thumbnail uploaded");
+  if (!localVideoFilePath) throw new ApiError(400, "Videofile local path not found!");
+  if (!localThumbnailPath) throw new ApiError(400, "Thumbnail local path not found!");
 
   const VideoFile = await uploadFileOnCloudinary(
     localVideoFilePath,
@@ -88,12 +88,12 @@ const getVideo = AsyncHandler(async (req, res) => {
 
   if (!videoId?.trim())    throw new ApiError(400, "VideoId not Found!");
 
-  const video = await Videos.findOne({ videoId });
+  const video = await Videos.findById( videoId );
 
   if (!video) throw new ApiError(400, "Video not Found!");
 
   if (slug !== video.slug) {
-    return res.redirect(301, `/api/v1/video/${video.videoId}/${video.slug}`);
+    return res.redirect(301, `/api/v1/video/${video._id}/${video.slug}`);
   }
 
   await Videos.findByIdAndUpdate(
@@ -112,7 +112,7 @@ const getVideo = AsyncHandler(async (req, res) => {
 
   const userVideo = await Videos.aggregate([
     {
-      $match: { videoId: videoId?.trim() }
+      $match: { _id : video._id }
     },
     {
       $lookup: {
@@ -196,20 +196,21 @@ const getAllVideos = AsyncHandler(async (req, res) => {
 const updateVideo = AsyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
+  if(!videoId)   throw new ApiError(400, "videoId not found!");
   if (!req.user) throw new ApiError(400, "Unauthorized");
   
   // console.log(req.headers);
   
   const { title, description, isPublised } = req.body;
 
-  if (!title || !description)
-    throw new ApiError(400, "title and description is required!");
+  if (!title || !description || !isPublised)
+    throw new ApiError(400, "title, description, isPublised field not found!");
 
   const localThumbnailPath = req.file?.path;
 
-  if (!localThumbnailPath) throw new ApiError("Thumbnail is required!");
+  if (!localThumbnailPath) throw new ApiError("Local Thumbnail path not found!");
 
-  const video = await Videos.findOne({ videoId });
+  const video = await Videos.findById( videoId );
 
   if (!video) throw new ApiError(400, "Video not Found!");
 
@@ -222,8 +223,8 @@ const updateVideo = AsyncHandler(async (req, res) => {
   deleteFileFromLocal(localThumbnailPath);
 
   const result = await cloudinary.uploader.destroy(video.thumbnailId);
-
-  if (result === "ok")
+  
+  if (result.result === "ok")
     console.log("previous thumbnail deleted from cloudinary");
 
   const updatedVideo = await Videos.findByIdAndUpdate(
@@ -252,11 +253,13 @@ const deleteVideo = AsyncHandler(async (req, res) => {
 
   if (!req.user) throw new ApiError(400, "Unauthorized");
 
-  const video = await Videos.findOne({ videoId });
+  const video = await Videos.findById( videoId );
+
+  if (!video) throw new ApiError(400, "Video not Found!");
   
   const thumbnailResult = await cloudinary.uploader.destroy(video.thumbnailId);
 
-  const videoResult = await cloudinary.uploader.destroy(video.videoId, {
+  const videoResult = await cloudinary.uploader.destroy(video.videofileId, {
     resource_type: "video",
   });
 
@@ -264,7 +267,7 @@ const deleteVideo = AsyncHandler(async (req, res) => {
 
   // if(videoResult == "ok")           console.log("video deleted from cloudinary");
 
-  await Videos.deleteOne({ videoId });
+  await Videos.findByIdAndDelete( videoId );
 
   res.status(200).json(new ApiResponse(200, "Video deleted successfully"));
 });

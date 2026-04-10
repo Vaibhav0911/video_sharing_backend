@@ -14,7 +14,7 @@ const likeSchema = new Schema({
     },
     targetId: {
         type: Schema.Types.ObjectId,
-        refPath: targetType,
+        refPath: "targetType",
         required: true
     } 
 

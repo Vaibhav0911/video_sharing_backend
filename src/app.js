@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import Auth from "./routes/auth.route.js"
 import User from "./routes/user.route.js";
 import Video from "./routes/video.route.js";
 import Subscription from "./routes/subscription.route.js";
@@ -14,6 +15,7 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(express.urlencoded({extended: true}))
 
+app.use("/api/v1/auth", Auth);
 app.use("/api/v1/user", User);
 app.use("/api/v1/video", Video);
 app.use("/api/v1/subscription", Subscription);

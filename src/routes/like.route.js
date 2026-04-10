@@ -9,7 +9,7 @@ router.route("/:targetType/:targetId").post(
     toggleLike
 )
 
-router.route("/:targetType/:targetId").post(
+router.route("/:targetType/:targetId").get(
     jwtverify,
     getLike
 )

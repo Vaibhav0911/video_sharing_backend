@@ -5,7 +5,7 @@ import { uploadVideo, getVideo, updateVideo, deleteVideo, getAllVideos } from ".
 
 const router = Router();
 
-router.route("/upload-video").post(
+router.route("/").post(
   jwtverify,
   Upload.fields([
     { name: "videofile", maxCount: 1 },
@@ -24,13 +24,13 @@ router.route("/").get(
   getAllVideos
 );
 
-router.route("/update-video/:videoId").put(
+router.route("/:videoId").patch(
   Upload.single("thumbnail"),
   jwtverify,
   updateVideo
 )
 
-router.route("/delete-video/:videoId").delete(
+router.route("/:videoId").delete(
   jwtverify,
   deleteVideo
 )

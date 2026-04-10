@@ -2,14 +2,21 @@ import { AsyncHandler } from "../utils/AsyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Likes } from "../models/likes.model.js";
+import mongoose from "mongoose";
 
-const allowedTypes = ["Videos", "Comments", "Tweets"];
+const allowedTypes = {
+    video:   "Videos",
+    comment: "Comments",
+    tweet:   "Tweets"
+};
 
 const toggleLike = AsyncHandler(async (req, res) => {
-  const {targetId, targetType} = req.params;
+
+  const targetType = allowedTypes[req.params.targetType];
+  const targetId   = req.params.targetId;
   const user = req.user;
   
-  if (!allowedTypes.includes(targetType))     throw new ApiError(400, "Invalid targetType");  
+  if (!targetType)                            throw new ApiError(400, "Invalid targetType");  
   if (!targetId)                              throw new ApiError(400, "targetId not found!");
   if (!user)                                  throw new ApiError(400, "Unauthorized");
 
@@ -34,12 +41,13 @@ const toggleLike = AsyncHandler(async (req, res) => {
 
 const getLike = AsyncHandler(async (req, res) => {
   
-    const {targetId, targetType} = req.params;
-    const user = req.body;
+    const targetType = allowedTypes[req.params.targetType];
+    const targetId   = req.params.targetId;
+    const user = req.user;
 
-    if (!allowedTypes.includes(targetType))     throw new ApiError(400, "Invalid targetType");  
+    if (!targetType)                            throw new ApiError(400, "Invalid targetType!");  
     if (!targetId)                              throw new ApiError(400, "targetId not found!");
-    if (!user)                                  throw new ApiError(400, "Unauthorized");
+    if (!user)                                  throw new ApiError(400, "Unauthorized!");
 
     const likeCount = await Likes.countDocuments({
         targetType: targetType,
@@ -50,7 +58,7 @@ const getLike = AsyncHandler(async (req, res) => {
         {
             $match: {
                 targetType: targetType,
-                targetId: targetId
+                targetId: new mongoose.Types.ObjectId(targetId)
             }
         },
         {
